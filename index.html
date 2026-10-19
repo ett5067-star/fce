@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FCE B2 Speaking Simulator</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-indigo-700 text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <i class="ph ph-certificate text-3xl text-amber-300"></i>
+        <div>
+          <h1 class="text-xl font-bold tracking-wide">FCE B2 Speaking Simulator</h1>
+          <p class="text-xs text-indigo-200">Official Cambridge B2 First Exam Preparation</p>
+        </div>
+      </div>
+      <span class="bg-indigo-800 text-indigo-100 text-xs px-3 py-1 rounded-full border border-indigo-500 font-medium mt-2 sm:mt-0">
+        GitHub Pages Standalone Edition
+      </span>
+    </div>
+  </header>
+
+  <!-- User Instructions -->
+  <section class="max-w-6xl mx-auto w-full px-4 mt-6">
+    <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-lg shadow-sm flex items-start space-x-3">
+      <i class="ph ph-info text-2xl text-amber-600 mt-0.5 flex-shrink-0"></i>
+      <div class="text-sm text-amber-900">
+        <strong class="font-semibold">How to use this simulator:</strong>
+        <ol class="list-decimal list-inside mt-1 space-y-1 text-amber-800">
+          <li>Select the <strong>Exam Part</strong> tab you wish to practice.</li>
+          <li>Click <strong>"Connect Microphone"</strong> to grant audio permission directly to the site.</li>
+          <li>Click <strong>"Generate Random Prompt"</strong> to load a new topic.</li>
+          <li>Click <strong>"Start Response"</strong> to record your answer and view live audio levels.</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- Navigation Tabs -->
+  <main class="max-w-6xl mx-auto w-full px-4 my-6 flex-grow">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      
+      <!-- Tab Headers -->
+      <div class="flex border-b border-slate-200 bg-slate-100/70 overflow-x-auto" id="tabContainer">
+        <button type="button" id="tab-1" class="tab-btn active px-6 py-3 font-semibold text-sm flex items-center space-x-2 border-b-2 border-indigo-600 text-indigo-600 bg-white transition">
+          <i class="ph ph-user-wave text-lg"></i>
+          <span>Part 1: Interview</span>
+        </button>
+        <button type="button" id="tab-2" class="tab-btn px-6 py-3 font-semibold text-sm text-slate-600 hover:text-indigo-600 flex items-center space-x-2 transition border-b-2 border-transparent">
+          <i class="ph ph-images text-lg"></i>
+          <span>Part 2: Long Turn</span>
+        </button>
+        <button type="button" id="tab-3" class="tab-btn px-6 py-3 font-semibold text-sm text-slate-600 hover:text-indigo-600 flex items-center space-x-2 transition border-b-2 border-transparent">
+          <i class="ph ph-users-three text-lg"></i>
+          <span>Part 3: Collaborative Task</span>
+        </button>
+        <button type="button" id="tab-4" class="tab-btn px-6 py-3 font-semibold text-sm text-slate-600 hover:text-indigo-600 flex items-center space-x-2 transition border-b-2 border-transparent">
+          <i class="ph ph-chats-teardrop text-lg"></i>
+          <span>Part 4: Discussion</span>
+        </button>
+      </div>
+
+      <!-- Tab Content Panel -->
+      <div class="p-6">
+        
+        <!-- Part Header -->
+        <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
+          <div>
+            <h2 id="parteTitulo" class="text-xl font-bold text-slate-800">Part 1: Interview</h2>
+            <p id="parteDescripcion" class="text-xs text-slate-500 mt-0.5">Direct questions about your personal life, hobbies, work, or studies (~2 minutes).</p>
+          </div>
+          <button type="button" id="btnNuevoPrompt" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium text-xs px-4 py-2 rounded-lg transition flex items-center space-x-1.5 border border-indigo-200">
+            <i class="ph ph-arrows-clockwise text-sm"></i>
+            <span>Generate Random Prompt</span>
+          </button>
+        </div>
+
+        <!-- Exam Task/Prompt Box -->
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-5 mb-6 min-h-[160px] flex flex-col justify-center" id="promptBox">
+          <p class="text-xs text-indigo-600 font-bold uppercase tracking-wider mb-2">Exam Question / Task:</p>
+          <div id="promptContenido" class="text-slate-800 font-medium leading-relaxed">
+            Loading exam prompt...
+          </div>
+        </div>
+
+        <!-- Audio Control Panel -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          
+          <div class="md:col-span-2 bg-indigo-900 text-white rounded-xl p-5 flex flex-col justify-between shadow-sm">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-xs uppercase font-bold text-indigo-300 tracking-wider">Voice Recorder</span>
+              <span id="timerBadge" class="bg-indigo-800 text-amber-300 text-xs font-mono px-3 py-1 rounded-full border border-indigo-700">
+                Timer: <span id="timer">00:00</span>
+              </span>
+            </div>
+
+            <!-- Audio Level VU Meter -->
+            <div class="bg-indigo-950/80 border border-indigo-700/60 rounded-lg p-2.5 mb-4">
+              <div class="flex justify-between items-center text-[11px] text-indigo-200 mb-1">
+                <span class="flex items-center space-x-1">
+                  <i class="ph ph-wave-sine text-amber-400 text-sm"></i>
+                  <span>Microphone Signal Level:</span>
+                </span>
+                <span id="lblNivelAudio" class="font-mono text-slate-400">0%</span>
+              </div>
+              <div class="w-full bg-indigo-900 rounded-full h-3 overflow-hidden p-0.5 border border-indigo-800 flex">
+                <div id="barNivelAudio" class="bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 h-full rounded-full transition-all duration-75" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 mb-2">
+              <button type="button" id="btnConectarMic" class="bg-amber-500 hover:bg-amber-600 text-indigo-950 font-bold text-xs px-4 py-2.5 rounded-lg shadow transition flex items-center space-x-1">
+                <i class="ph ph-plug text-base"></i>
+                <span id="lblConectarMic">Connect Microphone</span>
+              </button>
+
+              <button type="button" id="btnGrabar" disabled class="bg-slate-700 text-slate-400 font-bold text-sm px-5 py-2.5 rounded-lg shadow cursor-not-allowed transition flex items-center space-x-2">
+                <i class="ph ph-microphone text-lg"></i>
+                <span id="lblGrabar">Start Response</span>
+              </button>
+              
+              <button type="button" id="btnEvaluar" disabled class="bg-slate-700 text-slate-400 font-bold text-sm px-5 py-2.5 rounded-lg shadow cursor-not-allowed transition flex items-center space-x-2">
+                <i class="ph ph-brain text-lg"></i>
+                <span>Evaluate Answer</span>
+              </button>
+            </div>
+
+            <p id="micStatus" class="text-xs text-indigo-200 italic">Click "Connect Microphone" to initialize audio capture.</p>
+          </div>
+
+          <!-- Diction & Status Monitor -->
+          <div class="bg-slate-100 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
+            <div>
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">Status</span>
+              <div class="flex items-baseline space-x-2">
+                <span id="scoreConfianza" class="text-2xl font-extrabold text-slate-800">OFF</span>
+                <span id="lblConfianzaEstado" class="text-xs text-slate-500">Disconnected</span>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-2">Monitors live microphone stream in real-time.</p>
+          </div>
+        </div>
+
+        <!-- Speech Transcription Box -->
+        <div class="mb-6">
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Speech Transcription / Student Response (Editable):</label>
+          <textarea id="transcripcionBox" placeholder="Your spoken audio transcription will appear here in real-time. You can also edit or type your text manually..." class="w-full bg-white border border-slate-300 rounded-lg p-4 text-sm text-slate-700 min-h-[90px] max-h-[140px] focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+        </div>
+
+        <!-- Evaluation Results Panel -->
+        <div id="panelEvaluacion" class="hidden border-t border-slate-200 pt-6 mt-6">
+          <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center space-x-2">
+            <i class="ph ph-chart-line-up text-indigo-600"></i>
+            <span>FCE B2 Assessment Feedback</span>
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-center md:col-span-1 flex flex-col justify-center">
+              <span class="text-xs font-bold text-indigo-600 uppercase">Overall Score</span>
+              <span id="scoreGlobal" class="text-4xl font-extrabold text-indigo-900 my-1">0.0</span>
+              <span class="text-[10px] text-indigo-500">out of 10.0 points</span>
+            </div>
+
+            <div class="md:col-span-4 bg-white border border-slate-200 rounded-xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+              <div class="p-2 bg-slate-50 rounded-lg">
+                <span class="text-[11px] font-semibold text-slate-500 block">Grammar & Vocab</span>
+                <span id="scoreGramatica" class="text-lg font-bold text-slate-800">0.0 / 5</span>
+              </div>
+              <div class="p-2 bg-slate-50 rounded-lg">
+                <span class="text-[11px] font-semibold text-slate-500 block">Discourse / Fluency</span>
+                <span id="scoreFluidez" class="text-lg font-bold text-slate-800">0.0 / 5</span>
+              </div>
+              <div class="p-2 bg-slate-50 rounded-lg">
+                <span class="text-[11px] font-semibold text-slate-500 block">Pronunciation</span>
+                <span id="scorePronunciacion" class="text-lg font-bold text-slate-800">0.0 / 5</span>
+              </div>
+              <div class="p-2 bg-slate-50 rounded-lg">
+                <span class="text-[11px] font-semibold text-slate-500 block">Interactive Comm.</span>
+                <span id="scoreInteraccion" class="text-lg font-bold text-slate-800">0.0 / 5</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse border border-slate-200 rounded-lg">
+              <thead>
+                <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                  <th class="p-3">Category</th>
+                  <th class="p-3">Student Snippet</th>
+                  <th class="p-3">Deduction</th>
+                  <th class="p-3">Reason for Discount</th>
+                  <th class="p-3">How to Correct (B2 Recommendation)</th>
+                </tr>
+              </thead>
+              <tbody id="tablaErroresBody" class="divide-y divide-slate-200 text-slate-700">
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-slate-800 text-slate-400 text-xs py-4 text-center mt-auto border-t border-slate-700">
+    <p>FCE B2 Speaking Simulator — Standalone Version</p>
+  </footer>
+
+  <script>
+    const promptsFCE = {
+      1: [
+        "<p class='text-base font-semibold'>1. Where are you from, and what do you like most about living there?</p>",
+        "<p class='text-base font-semibold'>2. Do you prefer studying/working in the morning or in the evening? Why?</p>",
+        "<p class='text-base font-semibold'>3. What kind of holidays do you enjoy the most and why?</p>"
+      ],
+      2: [
+        `<div>
+          <p class='text-base font-bold text-slate-800 mb-3'>Compare the two photos and answer: <span class='text-indigo-700'>Why might the people have chosen these different ways of exercising, and how do they feel?</span></p>
+          <div class='grid grid-cols-1 md:grid-cols-2 gap-4 mt-2'>
+            <div class='bg-white p-2 rounded-lg border border-slate-200 shadow-sm'>
+              <img src='https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80' class='w-full h-48 object-cover rounded-md mb-1' alt='Gym workout'>
+              <p class='text-xs text-slate-500 font-medium text-center'>Photo A: Working out in an indoor gym</p>
+            </div>
+            <div class='bg-white p-2 rounded-lg border border-slate-200 shadow-sm'>
+              <img src='https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=600&q=80' class='w-full h-48 object-cover rounded-md mb-1' alt='Outdoor running'>
+              <p class='text-xs text-slate-500 font-medium text-center'>Photo B: Outdoor running in nature</p>
+            </div>
+          </div>
+        </div>`
+      ],
+      3: [
+        `<div>
+          <p class='text-base font-bold text-slate-800 mb-3'>Central Question: <span class='text-indigo-700'>How could a city attract more tourists?</span></p>
+          <div class='bg-indigo-50 border border-indigo-200 rounded-xl p-4 text-center my-3'>
+            <span class='font-bold text-indigo-900 block mb-3 text-sm uppercase tracking-wide'>Mind Map Options to Discuss:</span>
+            <div class='grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-semibold text-indigo-800'>
+              <div class='bg-white p-2.5 rounded-lg border border-indigo-100 shadow-sm'>1. Building a new museum</div>
+              <div class='bg-white p-2.5 rounded-lg border border-indigo-100 shadow-sm'>2. Music festival</div>
+              <div class='bg-white p-2.5 rounded-lg border border-indigo-100 shadow-sm'>3. Better public transport</div>
+              <div class='bg-white p-2.5 sm:col-span-1 rounded-lg border border-indigo-100 shadow-sm'>4. Traditional food market</div>
+              <div class='bg-white p-2.5 sm:col-span-2 rounded-lg border border-indigo-100 shadow-sm'>5. Creating modern sports facilities</div>
+            </div>
+          </div>
+        </div>`
+      ],
+      4: [
+        "<p class='text-base font-semibold'>1. Some people say that tourism destroys local cultures. Do you agree?</p>"
+      ]
+    };
+
+    let parteActual = 1;
+    let grabando = false;
+    let timerInterval = null;
+    let segundosTranscurridos = 0;
+
+    let mediaStream = null;
+    let audioCtx = null;
+    let analyser = null;
+    let recognition = null;
+    let transcripcionCompleta = "";
+
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById('btnNuevoPrompt').addEventListener('click', generarPromptAleatorio);
+      document.getElementById('btnGrabar').addEventListener('click', toggleGrabacion);
+      document.getElementById('btnEvaluar').addEventListener('click', enviarAEvaluar);
+      document.getElementById('btnConectarMic').addEventListener('click', conectarMic);
+
+      for (let i = 1; i <= 4; i++) {
+        const tabBtn = document.getElementById(`tab-${i}`);
+        if (tabBtn) tabBtn.addEventListener('click', () => cambiarPestaña(i));
+      }
+
+      generarPromptAleatorio();
+    });
+
+    // Native Speech & Audio Setup
+    async function conectarMic() {
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+
+        const source = audioCtx.createMediaStreamSource(mediaStream);
+        source.connect(analyser);
+
+        // Speech Recognition Setup
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+          recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+
+          recognition.onresult = function(event) {
+            let textoInterino = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) {
+                transcripcionCompleta += event.results[i][0].transcript + ' ';
+              } else {
+                textoInterino += event.results[i][0].transcript;
+              }
+            }
+            document.getElementById('transcripcionBox').value = transcripcionCompleta + textoInterino;
+          };
+        }
+
+        document.getElementById('micStatus').innerText = "Microphone connected successfully! Press 'Start Response'.";
+        document.getElementById('lblConectarMic').innerText = "Mic Connected";
+        document.getElementById('btnConectarMic').classList.remove('bg-amber-500', 'hover:bg-amber-600');
+        document.getElementById('btnConectarMic').classList.add('bg-emerald-600', 'text-white');
+        
+        document.getElementById('scoreConfianza').innerText = "ON";
+        document.getElementById('lblConfianzaEstado').innerText = "Active";
+
+        document.getElementById('btnGrabar').disabled = false;
+        document.getElementById('btnGrabar').classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+        document.getElementById('btnGrabar').classList.add('bg-emerald-500', 'hover:bg-emerald-600', 'text-white');
+
+        iniciarVU();
+      } catch(err) {
+        document.getElementById('micStatus').innerText = "Permission Error: " + err.message;
+      }
+    }
+
+    function iniciarVU() {
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      function renderFrame() {
+        if (!analyser) return;
+        analyser.getByteFrequencyData(dataArray);
+        let total = 0;
+        for (let i = 0; i < dataArray.length; i++) total += dataArray[i];
+        let avg = total / dataArray.length;
+        let pct = Math.min(100, Math.round((avg / 128) * 100));
+
+        document.getElementById('barNivelAudio').style.width = pct + '%';
+        document.getElementById('lblNivelAudio').innerText = pct + '%';
+        requestAnimationFrame(renderFrame);
+      }
+      renderFrame();
+    }
+
+    function toggleGrabacion() {
+      if (!grabando) {
+        transcripcionCompleta = "";
+        document.getElementById('transcripcionBox').value = "";
+        segundosTranscurridos = 0;
+        grabando = true;
+
+        if (recognition) {
+          try { recognition.start(); } catch(e) {}
+        }
+
+        document.getElementById('lblGrabar').innerText = "Stop Response";
+        document.getElementById('btnGrabar').classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+        document.getElementById('btnGrabar').classList.add('bg-rose-600', 'hover:bg-rose-700');
+        document.getElementById('micStatus').innerText = "Recording... Speak clearly into your microphone.";
+
+        timerInterval = setInterval(() => {
+          segundosTranscurridos++;
+          let min = String(Math.floor(segundosTranscurridos / 60)).padStart(2, '0');
+          let sec = String(segundosTranscurridos % 60).padStart(2, '0');
+          document.getElementById('timer').innerText = `${min}:${sec}`;
+        }, 1000);
+      } else {
+        grabando = false;
+        clearInterval(timerInterval);
+
+        if (recognition) {
+          try { recognition.stop(); } catch(e) {}
+        }
+
+        document.getElementById('lblGrabar').innerText = "Start Response";
+        document.getElementById('btnGrabar').classList.remove('bg-rose-600', 'hover:bg-rose-700');
+        document.getElementById('btnGrabar').classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+        document.getElementById('micStatus').innerText = "Recording finished. Click 'Evaluate Answer'.";
+
+        document.getElementById('btnEvaluar').disabled = false;
+        document.getElementById('btnEvaluar').classList.remove('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
+        document.getElementById('btnEvaluar').classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'text-white');
+      }
+    }
+
+    function cambiarPestaña(numParte) {
+      parteActual = numParte;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active', 'border-indigo-600', 'text-indigo-600', 'bg-white');
+        btn.classList.add('border-transparent', 'text-slate-600');
+      });
+
+      const activeTab = document.getElementById(`tab-${numParte}`);
+      if (activeTab) {
+        activeTab.classList.add('active', 'border-indigo-600', 'text-indigo-600', 'bg-white');
+        activeTab.classList.remove('border-transparent', 'text-slate-600');
+      }
+
+      generarPromptAleatorio();
+    }
+
+    function generarPromptAleatorio() {
+      const lista = promptsFCE[parteActual];
+      if (lista && lista.length > 0) {
+        const aleatorio = lista[Math.floor(Math.random() * lista.length)];
+        document.getElementById('promptContenido').innerHTML = aleatorio;
+      }
+    }
+
+    function enviarAEvaluar() {
+      const text = document.getElementById('transcripcionBox').value;
+      
+      // Standalone Evaluation Logic
+      let ptsGrammar = 4.0;
+      let ptsFluency = 3.5;
+      let ptsPronunciation = 4.0;
+      let ptsInteraction = 4.5;
+      let errores = [];
+
+      if (!text || text.trim().length === 0) {
+        errores.push({
+          categoria: "No Speech Detected",
+          fragmento: "N/A",
+          penalizacion: "-5.0 pts",
+          razon: "No spoken transcription or text was provided.",
+          sugerencia: "Ensure your microphone is active or type your response before evaluating."
+        });
+      } else {
+        if (/if i would/i.test(text)) {
+          errores.push({
+            categoria: "Grammar",
+            fragmento: "if I would...",
+            penalizacion: "-0.5 pts",
+            razon: "Incorrect use of 'would' in second conditional 'if' clause.",
+            sugerencia: "Use past simple in the if-clause: 'If I had...' or 'If I were...'"
+          });
+          ptsGrammar -= 0.5;
+        }
+        if (/\b(very good|very bad)\b/i.test(text)) {
+          errores.push({
+            categoria: "Vocabulary",
+            fragmento: "Uso de adjetivos simples (very good/bad)",
+            penalizacion: "-0.25 pts",
+            razon: "Basic vocabulary range for Cambridge B2 First.",
+            sugerencia: "Use higher-level B2 adjectives such as 'outstanding', 'beneficial', or 'challenging'."
+          });
+          ptsGrammar -= 0.25;
+        }
+      }
+
+      let totalScore = (((ptsGrammar + ptsFluency + ptsPronunciation + ptsInteraction) / 4) * 2).toFixed(1);
+
+      mostrarResultados({
+        puntuacionTotal: totalScore,
+        criterios: { gramatica: ptsGrammar.toFixed(1), fluidez: ptsFluency.toFixed(1), pronunciacion: ptsPronunciation.toFixed(1), interaccion: ptsInteraction.toFixed(1) },
+        errores: errores
+      });
+    }
+
+    function mostrarResultados(res) {
+      document.getElementById('micStatus').innerText = "Assessment complete.";
+      document.getElementById('panelEvaluacion').classList.remove('hidden');
+
+      document.getElementById('scoreGlobal').innerText = res.puntuacionTotal;
+      document.getElementById('scoreGramatica').innerText = res.criterios.gramatica + " / 5";
+      document.getElementById('scoreFluidez').innerText = res.criterios.fluidez + " / 5";
+      document.getElementById('scorePronunciacion').innerText = res.criterios.pronunciacion + " / 5";
+      document.getElementById('scoreInteraccion').innerText = res.criterios.interaccion + " / 5";
+
+      const tbody = document.getElementById('tablaErroresBody');
+      tbody.innerHTML = "";
+
+      if (!res.errores || res.errores.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-emerald-600 font-semibold">Great response! No significant errors detected.</td></tr>`;
+        return;
+      }
+
+      res.errores.forEach(err => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-bold text-slate-800">${err.categoria}</td>
+            <td class="p-3 text-rose-600 font-mono text-[11px]">${err.fragmento}</td>
+            <td class="p-3 font-bold text-rose-700">${err.penalizacion}</td>
+            <td class="p-3">${err.razon}</td>
+            <td class="p-3 text-indigo-700 font-medium">${err.sugerencia}</td>
+          </tr>
+        `;
+      });
+
+      document.getElementById('panelEvaluacion').scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
