@@ -22,7 +22,7 @@
         </div>
       </div>
       <span class="bg-indigo-800 text-indigo-100 text-xs px-3 py-1 rounded-full border border-indigo-500 font-medium mt-2 sm:mt-0">
-        AI-Powered Edition
+        AI Strict Evaluator Edition
       </span>
     </div>
   </header>
@@ -35,8 +35,8 @@
         <strong class="font-semibold">How to practice:</strong>
         <ol class="list-decimal list-inside mt-1 space-y-1 text-amber-800">
           <li>Select an <strong>Exam Part</strong> tab below and click <strong>"Connect Microphone"</strong>.</li>
-          <li>Click <strong>"Start Response"</strong> and speak clearly in English. The live transcription box will update continuously.</li>
-          <li>When finished, click <strong>"Evaluate Answer"</strong> for instant AI assessment based on Cambridge rubrics.</li>
+          <li>Click <strong>"Start Response"</strong> and speak clearly in English for 30-60 seconds.</li>
+          <li>Click <strong>"Evaluate Answer"</strong> for Cambridge B2 AI feedback.</li>
         </ol>
       </div>
     </div>
@@ -150,7 +150,7 @@
         <!-- Speech Transcription Box -->
         <div class="mb-6">
           <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Real-Time English Transcription (Editable):</label>
-          <textarea id="transcripcionBox" placeholder="Your spoken English transcription will appear here automatically. You can edit or refine any words manually before evaluating..." class="w-full bg-white border border-slate-300 rounded-lg p-4 text-sm text-slate-700 min-h-[110px] max-h-[160px] focus:ring-2 focus:ring-indigo-500 focus:outline-none leading-relaxed"></textarea>
+          <textarea id="transcripcionBox" placeholder="Your spoken English response will appear here. Speak clearly or type your response..." class="w-full bg-white border border-slate-300 rounded-lg p-4 text-sm text-slate-700 min-h-[110px] max-h-[160px] focus:ring-2 focus:ring-indigo-500 focus:outline-none leading-relaxed"></textarea>
         </div>
 
         <!-- Evaluation Results Panel -->
@@ -427,36 +427,61 @@
       const text = document.getElementById('transcripcionBox').value.trim();
       const apiKey = API_KEY_PREDETERMINADA;
 
-      if (!text) {
-        alert("The transcription box is empty. Please speak or type your answer before evaluating.");
+      // STRICT FILTER 1: Too short / Incoherent response
+      const words = text.split(/\s+/).filter(w => w.length > 0);
+      if (words.length < 6) {
+        mostrarResultados({
+          puntuacionTotal: "0.0",
+          criterios: { gramatica: "0.0", fluidez: "0.0", pronunciacion: "0.0", interaccion: "0.0" },
+          errores: [
+            {
+              categoria: "Incoherent / Insufficient Response",
+              fragmento: text || "None",
+              penalizacion: "-10.0 pts",
+              razon: "Your response contains fewer than 6 words and is incoherent or incomplete for a Cambridge B2 First Speaking answer.",
+              sugerencia: "Provide a full spoken response in complete English sentences (aim for 30–60 seconds)."
+            }
+          ]
+        });
+        return;
+      }
+
+      // STRICT FILTER 2: Spanish Detector
+      const spanishPattern = /\b(el|la|los|las|que|este|esta|estos|estas|bueno|porque|como|pero|por|para|con|un|una|nosotros|vosotros|gracias|hola)\b/i;
+      if (spanishPattern.test(text)) {
+        mostrarResultados({
+          puntuacionTotal: "0.0",
+          criterios: { gramatica: "0.0", fluidez: "0.0", pronunciacion: "0.0", interaccion: "0.0" },
+          errores: [
+            {
+              categoria: "Spanish Language Detected",
+              fragmento: text,
+              penalizacion: "-10.0 pts",
+              razon: "Spanish words were detected in your candidate response.",
+              sugerencia: "The Cambridge B2 First exam must be answered strictly in English. Please repeat your response in English."
+            }
+          ]
+        });
         return;
       }
 
       document.getElementById('micStatus').innerText = "Analyzing response with Gemini AI Assessor...";
 
       const promptInstrucciones = `
-You are an official Cambridge English C1/C2 Examiner evaluating a student's Speaking response for the B2 First (FCE) exam.
+You are an official Cambridge C1/C2 Examiner evaluating a candidate's Speaking attempt for the B2 First (FCE) exam.
 
-Exam Context:
-- FCE Part: ${parteActual}
-- Task/Prompt: ${document.getElementById('promptContenido').innerText}
-- Student Audio Duration: ${segundosTranscurridos} seconds
-- Student Spoken Response: "${text}"
+Candidate Response: "${text}"
+Exam Part: ${parteActual}
+Task: ${document.getElementById('promptContenido').innerText}
 
-INSTRUCTIONS FOR EVALUATION:
-1. LANGUAGE CHECK: Is the student speaking in English?
-   - IF THE STUDENT RESPONDS IN SPANISH or any non-English language: Set total Score to 0.0, set all sub-scores to 0.0, and add a major error entry stating that the FCE exam must be answered strictly in English.
-2. IF ENGLISH: Evaluate strictly under Cambridge B2 criteria (0.0 to 5.0 scale per criterion):
+STRICT EVALUATION RULES:
+1. If the text is incomplete or lacks proper B2 sentence structures, penalize heavily.
+2. Evaluate under Cambridge B2 criteria (0.0 to 5.0 scale per criterion):
    - Grammar & Vocabulary
    - Discourse Management (Fluency)
    - Pronunciation & Clarity
-   - Interactive Communication / Task Completion
-3. DEDUCTIONS: Identify grammar mistakes, basic vocabulary, short time usage, or Spanish words. For each, indicate:
-   - category
-   - snippet
-   - deduction
-   - reason
-   - suggestion
+   - Interactive Communication
+3. List specific deductions, reason for discount, and B2 recommendations.
 
 Respond ONLY with valid JSON in this exact structure:
 {
@@ -469,11 +494,11 @@ Respond ONLY with valid JSON in this exact structure:
   },
   "errores": [
     {
-      "categoria": "Grammar / Language / Vocabulary",
-      "fragmento": "Exact snippet",
+      "categoria": "Grammar / Vocab / Fluency",
+      "fragmento": "problematic phrase",
       "penalizacion": "-0.5 pts",
-      "razon": "Explanation",
-      "sugerencia": "B2 Correction"
+      "razon": "reason for deduction",
+      "sugerencia": "correct B2 phrasing"
     }
   ]
 }
@@ -488,6 +513,10 @@ Respond ONLY with valid JSON in this exact structure:
           })
         });
 
+        if (!response.ok) {
+          throw new Error("HTTP error " + response.status);
+        }
+
         const data = await response.json();
         let rawText = data.candidates[0].content.parts[0].text;
         
@@ -496,8 +525,8 @@ Respond ONLY with valid JSON in this exact structure:
 
         mostrarResultados(jsonResult);
       } catch (err) {
-        alert("Error connecting to Gemini API: " + err.message);
-        document.getElementById('micStatus').innerText = "Evaluation error. Please check system key.";
+        alert("API Error: " + err.message);
+        document.getElementById('micStatus').innerText = "Evaluation error.";
       }
     }
 
